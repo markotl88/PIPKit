@@ -20,7 +20,9 @@ final class PIPKitEventDispatcher {
     
     private var startOffset: CGPoint = .zero
     private var deviceNotificationObserver: NSObjectProtocol?
-    
+    private var viewTranslationOffsetY: CGFloat = 0
+    private var maxTranslationOffsetY: CGFloat = 0
+
     deinit {
         deviceNotificationObserver.flatMap {
             NotificationCenter.default.removeObserver($0)
@@ -155,6 +157,7 @@ final class PIPKitEventDispatcher {
             origin.y = window.frame.height - safeAreaInsets.bottom - pipEdgeInsets.bottom - pipSize.height
         }
         
+        
         rootViewController.view.frame = CGRect(origin: origin, size: pipSize)
     }
     
@@ -182,9 +185,12 @@ final class PIPKitEventDispatcher {
             pipPosition = center.x < window.frame.width / 2.0 ? .middleLeft : .middleRight
         }
         
+        debugPrint("Y position: \(center.y)")
+        debugPrint("Y referent position: \(window.frame.height - safeAreaInsets.bottom - vh)")
+
         rootViewController.didChangePosition(pipPosition)
     }
-    
+
     // MARK: - Action
     @objc
     private func onTransition(_ gesture: UIPanGestureRecognizer) {
@@ -211,18 +217,23 @@ final class PIPKitEventDispatcher {
             var offset = startOffset
             offset.x += transition.x
             offset.y += transition.y
+            viewTranslationOffsetY = offset.y
             offset.x = max(safeAreaInsets.left + pipEdgeInsets.left + (pipSize.width / 2.0),
                            min(offset.x,
                                (window.frame.width - safeAreaInsets.right - pipEdgeInsets.right) - (pipSize.width / 2.0)))
             offset.y = max(safeAreaInsets.top + pipEdgeInsets.top + (pipSize.height / 2.0),
                            min(offset.y,
                                (window.frame.height - (safeAreaInsets.bottom) - pipEdgeInsets.bottom) - (pipSize.height / 2.0)))
-            
+            maxTranslationOffsetY = (window.frame.height - (safeAreaInsets.bottom) - pipEdgeInsets.bottom) - (pipSize.height)
             rootViewController.view.center = offset
         case .ended:
-            updatePIPPosition()
-            UIView.animate(withDuration: 0.15) { [weak self] in
-                self?.updatePIPFrame()
+            if viewTranslationOffsetY - maxTranslationOffsetY >= rootViewController.pipSize.height {
+                PIPKit.dismiss(animated: true)
+            } else {
+                updatePIPPosition()
+                UIView.animate(withDuration: 0.15) { [weak self] in
+                    self?.updatePIPFrame()
+                }
             }
         default:
             break
