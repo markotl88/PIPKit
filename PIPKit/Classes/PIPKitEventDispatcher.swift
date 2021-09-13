@@ -228,7 +228,7 @@ final class PIPKitEventDispatcher {
             rootViewController.view.center = offset
         case .ended:
             if viewTranslationOffsetY - maxTranslationOffsetY >= rootViewController.pipSize.height {
-                PIPKit.dismiss(animated: true)
+                PIPKit.delegate?.dismissingPIPKit()
             } else {
                 updatePIPPosition()
                 UIView.animate(withDuration: 0.15) { [weak self] in

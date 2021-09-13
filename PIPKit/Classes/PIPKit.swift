@@ -36,6 +36,10 @@ enum _PIPState {
 
 public typealias PIPKitViewController = (UIViewController & PIPUsable)
 
+public protocol PIPKitDelegate: AnyObject {
+    func dismissingPIPKit()
+}
+
 public final class PIPKit {
     
     static public var isActive: Bool { return rootViewController != nil }
@@ -44,6 +48,8 @@ public final class PIPKit {
     
     static internal var state: _PIPState = .none
     static private var rootViewController: PIPKitViewController?
+
+    static weak var delegate: PIPKitDelegate?
     
     public class func show(with viewController: PIPKitViewController, completion: (() -> Void)? = nil) {
         guard let window = UIApplication.shared.keyWindow else {
